@@ -60,11 +60,11 @@ class Client(object):
         '''
         if self.session is not None:
             args.update({ 'session' : self.session })
-        print('Python:', args)
+        #print('Python:', args)
         json = python2json(args)
-        print('Sending json:', json)
+        #print('Sending json:', json)
         url = self.get_url(service)
-        print('Sending to URL:', url)
+        #print('Sending to URL:', url)
 
         # If we're sending a file, format a multipart/form-data
         if file_args is not None:
@@ -92,23 +92,23 @@ class Client(object):
         else:
             # Else send x-www-form-encoded
             data = {'request-json': json}
-            print('Sending form data:', data)
+          #  print('Sending form data:', data)
             data = urlencode(data)
             data = data.encode('utf-8')
-            print('Sending data:', data)
+          #  print('Sending data:', data)
             headers = {}
 
         request = Request(url=url, headers=headers, data=data)
 
         try:
             f = urlopen(request)
-            print('Got reply HTTP status code:', f.status)
+           # print('Got reply HTTP status code:', f.status)
             txt = f.read()
-            print('Got json:', txt)
+           # print('Got json:', txt)
             result = json2python(txt)
-            print('Got result:', result)
+          #  print('Got result:', result)
             stat = result.get('status')
-            print('Got status:', stat)
+          #  print('Got status:', stat)
             if stat == 'error':
                 errstr = result.get('errormessage', '(none)')
                 raise RequestError('server error message: ' + errstr)
@@ -123,7 +123,7 @@ class Client(object):
         args = { 'apikey' : apikey }
         result = self.send_request('login', args)
         sess = result.get('session')
-        print('Got session:', sess)
+      #  print('Got session:', sess)
         if not sess:
             raise RequestError('no session in result')
         self.session = sess
@@ -160,7 +160,7 @@ class Client(object):
                 args.update({key: val})
             elif default is not None:
                 args.update({key: default})
-        print('Upload args:', args)
+        #print('Upload args:', args)
         return args
 
     def url_upload(self, url, **kwargs):
@@ -219,19 +219,20 @@ class Client(object):
         stat = result.get('status')
         if stat == 'success':
             result = self.send_request('jobs/%s/calibration' % job_id)
-            print('Calibration:', result)
-            result = self.send_request('jobs/%s/tags' % job_id)
-            print('Tags:', result)
-            result = self.send_request('jobs/%s/machine_tags' % job_id)
-            print('Machine Tags:', result)
-            result = self.send_request('jobs/%s/objects_in_field' % job_id)
-            print('Objects in field:', result)
-            result = self.send_request('jobs/%s/annotations' % job_id)
-            print('Annotations:', result)
-            result = self.send_request('jobs/%s/info' % job_id)
-            print('Calibration:', result)
+            print(result['ra'], result['dec'])
+           # result = self.send_request('jobs/%s/tags' % job_id)
+           # print('Tags:', result)
+           # result = self.send_request('jobs/%s/machine_tags' % job_id)
+           # print('Machine Tags:', result)
+           # result = self.send_request('jobs/%s/objects_in_field' % job_id)
+           # print('Objects in field:', result)
+           # result = self.send_request('jobs/%s/annotations' % job_id)
+           # print('Annotations:', result)
+           # result = self.send_request('jobs/%s/info' % job_id)
+           # print('Calibration:', result)
 
         return stat
+
 
     def annotate_data(self,job_id):
         """
@@ -256,7 +257,7 @@ class Client(object):
         return result
 
 if __name__ == '__main__':
-    print("Running with args %s"%sys.argv)
+   # print("Running with args %s"%sys.argv)
     import optparse
     parser = optparse.OptionParser()
     parser.add_option('--server', dest='server', default=Client.default_url,
@@ -397,23 +398,26 @@ if __name__ == '__main__':
 
             while True:
                 stat = c.sub_status(opt.sub_id, justdict=True)
-                print('Got status:', stat)
+                #print('Got status:', stat)
                 jobs = stat.get('jobs', [])
                 if len(jobs):
                     for j in jobs:
                         if j is not None:
                             break
                     if j is not None:
-                        print('Selecting job id', j)
+                        #print('Selecting job id', j)
                         opt.solved_id = j
                         break
                 time.sleep(5)
 
         while True:
             stat = c.job_status(opt.solved_id, justdict=True)
-            print('Got job status:', stat)
+            #print('Got job status:', stat)
             if stat.get('status','') in ['success']:
                 success = (stat['status'] == 'success')
+                result = c.send_request('jobs/%s/calibration' % opt.solved_id)
+                print(result['ra'], result['dec'])
+                sys.exit(0)
                 break
             elif stat.get('status','') in ['failure']:
                 print("Image solving failed")
@@ -465,7 +469,7 @@ if __name__ == '__main__':
     if opt.sub_id:
         print(c.sub_status(opt.sub_id))
     if opt.job_id:
-        print(c.job_status(opt.job_id))
+        c.job_status(opt.job_id)
 
     if opt.jobs_by_tag:
         tag = opt.jobs_by_tag
@@ -477,5 +481,3 @@ if __name__ == '__main__':
     if opt.myjobs:
         jobs = c.myjobs()
         print(jobs)
-
-
